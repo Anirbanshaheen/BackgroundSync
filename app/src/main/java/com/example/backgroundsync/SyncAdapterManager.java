@@ -36,7 +36,7 @@ class SyncAdapterManager {
         setAccountSyncable();
 
         ContentResolver.addPeriodicSync(account, AUTHORITY,
-                Bundle.EMPTY, 60);
+                Bundle.EMPTY, 1000);
 
 
         ContentResolver.setSyncAutomatically(account, AUTHORITY, true);

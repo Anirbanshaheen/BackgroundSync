@@ -1,37 +1,43 @@
 package com.example.backgroundsync;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.SyncRequest;
 import android.content.SyncResult;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 
 import com.example.backgroundsync.databinding.ActivityMainBinding;
+import com.example.backgroundsync.room.RoomDB;
+import com.example.backgroundsync.room.RoomData;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
-    // Constants
-    // The authority for the sync adapter's content provider
     public static final String AUTHORITY = "com.example.backgroundsync.provider";
-    // An account type, in the form of a domain name
     public static final String ACCOUNT_TYPE = "com.example.backgroundsync";
-    // The account name
     public static final String ACCOUNT = "placeholderaccount";
-    // Instance fields
-    Account mAccount;
 
+    Account mAccount;
     public static final long SECONDS_PER_MINUTE = 60L;
     public static final long SYNC_INTERVAL_IN_MINUTES = 1L;
     public static final long SYNC_INTERVAL = SYNC_INTERVAL_IN_MINUTES * SECONDS_PER_MINUTE;
-    // Global variables
-    // A content resolver for accessing the provider
     ContentResolver mResolver;
     SyncAdapter syncAdapter;
+
+    List<RoomData> dataList = new ArrayList();
+    LinearLayoutManager linearLayoutManager;
+    RoomDB database;
+    Adapter adapter;
 
     private ActivityMainBinding binding;
 
@@ -43,65 +49,78 @@ public class MainActivity extends AppCompatActivity {
         setContentView(binding.getRoot());
 
         mAccount = CreateSyncAccount(this);
-        //mResolver = getContentResolver();
+        mResolver = getContentResolver();
 
-        SyncAdapterManager syncAdapterManager = new SyncAdapterManager(this);
-        syncAdapterManager.beginPeriodicSync();
+        database = RoomDB.getInstance(this);
+        dataList = database.roomDao().getAll();
 
+        linearLayoutManager = new LinearLayoutManager(this);
+        binding.recyclerView.setLayoutManager(linearLayoutManager);
+
+        adapter = new Adapter(MainActivity.this, dataList);
+        binding.recyclerView.setAdapter(adapter);
+
+        clickEvent();
+
+        /*SyncAdapterManager syncAdapterManager = new SyncAdapterManager(this);
+        syncAdapterManager.beginPeriodicSync();*/
+
+    }
+
+    private void clickEvent() {
+        binding.addBtn.setOnClickListener(view -> {
+            String sText = binding.editText.getText().toString().trim();
+            if (!sText.equals("")) {
+                RoomData data = new RoomData();
+                data.setText(sText);
+                database.roomDao().insert(data);
+                binding.editText.setText("");
+
+                dataList.clear();
+                dataList.addAll(database.roomDao().getAll());
+                adapter.notifyDataSetChanged();
+            }
+        });
+
+        binding.resetBtn.setOnClickListener(view -> {
+            database.roomDao().reset(dataList);
+
+            dataList.clear();
+            dataList.addAll(database.roomDao().getAll());
+            adapter.notifyDataSetChanged();
+        });
     }
 
     public static Account CreateSyncAccount(Context context) {
-        // Create the account type and default account
         Account newAccount = new Account(ACCOUNT, ACCOUNT_TYPE);
-        // Get an instance of the Android account manager
         AccountManager accountManager = (AccountManager) context.getSystemService(ACCOUNT_SERVICE);
-        /*
-         * Add the account and account type, no password or user data
-         * If successful, return the Account object, otherwise report an error.
-         */
 
-
-        /*if (accountManager.addAccountExplicitly(newAccount, null, null)) {
-
-        } else {
-
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
+            accountManager.removeAccountExplicitly(newAccount);
         }
-        return newAccount;*/
+        if (accountManager.addAccountExplicitly(newAccount, null, null)) {
+
+            ContentResolver.addPeriodicSync(newAccount, AUTHORITY, Bundle.EMPTY,900); // seconds
+            ContentResolver.setSyncAutomatically(newAccount, AUTHORITY, true);
+            Log.d("logggggg", "*******CreateSyncAccount: successful ");
+        } else {
+            Log.d("logggggg", "*******CreateSyncAccount: error occured ");
+        }
         return newAccount;
     }
 
-    /**
-     * Respond to a button click by calling requestSync(). This is an
-     * asynchronous operation.
-     * <p>
-     * This method is attached to the refresh button in the layout
-     * XML file
-     *
-     * @param v The View associated with the method call,
-     *          in this case a Button
-     */
     public void onRefreshButtonClick(View v) {
-        // Pass the settings flags by inserting them in a bundle
         Bundle settingsBundle = new Bundle();
         settingsBundle.putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true);
         settingsBundle.putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true);
-        /*
-         * Request the sync for the default account, authority, and
-         * manual sync settings
-         */
         ContentResolver.requestSync(mAccount, AUTHORITY, settingsBundle);
     }
 
     public static void onSync(Account newAccount) {
         Log.d("logggggg", "call");
-        // Pass the settings flags by inserting them in a bundle
         Bundle settingsBundle = new Bundle();
         settingsBundle.putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true);
         settingsBundle.putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true);
-        /*
-         * Request the sync for the default account, authority, and
-         * manual sync settings
-         */
         ContentResolver.requestSync(newAccount, AUTHORITY, settingsBundle);
     }
 }

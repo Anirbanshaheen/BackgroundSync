@@ -4,6 +4,6 @@
     android:contentAuthority="com.example.backgroundsync.provider"
     android:accountType="com.example.backgroundsync"
     android:userVisible="false"
-    android:supportsUploading="false"
-    android:allowParallelSyncs="false"
+    android:supportsUploading="true"
+    android:allowParallelSyncs="true"
     android:isAlwaysSyncable="true"/>

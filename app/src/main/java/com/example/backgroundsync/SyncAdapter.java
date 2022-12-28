@@ -19,7 +19,14 @@ import android.widget.Toast;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
+import com.example.backgroundsync.network.RetrofitClient;
+import com.example.backgroundsync.network.ServiceInterface;
+
 import java.io.IOException;
+
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.schedulers.Schedulers;
 
 /**
  * Handle the transfer of data between a server and an
@@ -29,6 +36,8 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
     // Global variables
     // Define a variable to contain a content resolver instance
     ContentResolver contentResolver;
+    ServiceInterface serviceInterface;
+    CompositeDisposable compositeDisposable = new CompositeDisposable();
 
     /**
      * Set up the sync adapter
@@ -40,6 +49,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
          * from the incoming Context
          */
         contentResolver = context.getContentResolver();
+        serviceInterface = RetrofitClient.getClient(context).create(ServiceInterface.class);
     }
 
     /**
@@ -67,11 +77,25 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
          * Put the data transfer code here.
          */
         Log.d("logggggg", "onPerformSync()");
+        fetchData();
 
         //showNotification(getContext(), "The query", "let'see");
     }
 
-    private void showNotification(Context context, String title, String message) {
+    private void fetchData() {
+        compositeDisposable.add(serviceInterface.getPosts()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(postModels -> {
+                    postModels.get(0); // todo modify
+                }, throwable -> {
+                    throwable.getMessage();
+                }));
+    }
+
+
+
+    /*private void showNotification(Context context, String title, String message) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             // Create the NotificationChannel, but only on API 26+ because
             // the NotificationChannel class is new and not in the support library
@@ -95,6 +119,6 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         // Show the notification
         NotificationManagerCompat.from(context).notify(1, builder.build());
         Log.e("WorkManager", "Notification shown");
-    }
+    }*/
 }
 
