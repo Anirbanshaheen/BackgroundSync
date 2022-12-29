@@ -9,7 +9,7 @@ import android.content.Context;
 import android.os.Bundle;
 import android.util.Log;
 
-class SyncAdapterManager {
+/*class SyncAdapterManager {
 
     private static final String TAG = SyncAdapterManager.class.getSimpleName();
     public static final String AUTHORITY = "com.example.backgroundsync.provider";
@@ -57,4 +57,4 @@ class SyncAdapterManager {
         }
     }
 
-}
+}*/

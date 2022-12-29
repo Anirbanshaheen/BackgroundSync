@@ -95,16 +95,16 @@ public class MainActivity extends AppCompatActivity {
         Account newAccount = new Account(ACCOUNT, ACCOUNT_TYPE);
         AccountManager accountManager = (AccountManager) context.getSystemService(ACCOUNT_SERVICE);
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
+        /*if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
             accountManager.removeAccountExplicitly(newAccount);
-        }
+        }*/
         if (accountManager.addAccountExplicitly(newAccount, null, null)) {
 
-            ContentResolver.addPeriodicSync(newAccount, AUTHORITY, Bundle.EMPTY,900); // seconds
-            ContentResolver.setSyncAutomatically(newAccount, AUTHORITY, true);
+            //ContentResolver.setSyncAutomatically(newAccount, AUTHORITY, true);
+            ContentResolver.addPeriodicSync(newAccount, AUTHORITY, Bundle.EMPTY,10L); // seconds
             Log.d("logggggg", "*******CreateSyncAccount: successful ");
         } else {
-            Log.d("logggggg", "*******CreateSyncAccount: error occured ");
+            Log.d("logggggg", "*******CreateSyncAccount: error occurred ");
         }
         return newAccount;
     }
