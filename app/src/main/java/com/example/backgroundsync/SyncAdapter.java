@@ -10,76 +10,145 @@ import android.content.AbstractThreadedSyncAdapter;
 import android.content.ContentProviderClient;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.OperationApplicationException;
 import android.content.SyncResult;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.RemoteException;
 import android.util.Log;
 import android.widget.Toast;
 
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
+import com.example.backgroundsync.model.Post;
 import com.example.backgroundsync.network.RetrofitClient;
 import com.example.backgroundsync.network.ServiceInterface;
+import com.example.backgroundsync.room.RoomDB;
+import com.example.backgroundsync.room.RoomData;
+
+import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.List;
 
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.schedulers.Schedulers;
 
-/**
- * Handle the transfer of data between a server and an
- * app, using the Android sync adapter framework.
- */
 public class SyncAdapter extends AbstractThreadedSyncAdapter {
-    // Global variables
-    // Define a variable to contain a content resolver instance
     ContentResolver contentResolver;
     ServiceInterface serviceInterface;
     CompositeDisposable compositeDisposable = new CompositeDisposable();
+    List<RoomData> dataList = new ArrayList();
+    RoomDB database;
+    public static final String TAG = "SyncAdapter";
 
-    /**
-     * Set up the sync adapter
-     */
     public SyncAdapter(Context context, boolean autoInitialize) {
         super(context, autoInitialize);
-        /*
-         * If your app uses a content resolver, get an instance of it
-         * from the incoming Context
-         */
         contentResolver = context.getContentResolver();
         serviceInterface = RetrofitClient.getClient(context).create(ServiceInterface.class);
     }
 
-    /**
-     * Set up the sync adapter. This form of the
-     * constructor maintains compatibility with Android 3.0
-     * and later platform versions
-     */
     public SyncAdapter(Context context, boolean autoInitialize, boolean allowParallelSyncs) {
         super(context, autoInitialize, allowParallelSyncs);
-        /*
-         * If your app uses a content resolver, get an instance of it
-         * from the incoming Context
-         */
         contentResolver = context.getContentResolver();
     }
 
-    /*
-     * Specify the code you want to run in the sync adapter. The entire
-     * sync adapter runs in a background thread, so you don't have to set
-     * up your own background processing.
-     */
     @Override
     public void onPerformSync(Account account, Bundle extras, String authority, ContentProviderClient provider, SyncResult syncResult) {
-        /*
-         * Put the data transfer code here.
-         */
-        Log.d("logggggg", "onPerformSync()");
-        fetchData();
+        Log.d(TAG, "onPerformSync()");
 
-        //showNotification(getContext(), "The query", "let'see");
+        dataList.clear();
+        try {
+            database = RoomDB.getInstance(getContext());
+            dataList.addAll(database.roomDao().getAll());
+            if (dataList.size() > 0) {
+                Log.d(TAG, "getLocalData List size: " + dataList.size());
+                uploadData(dataList);
+            }
+        } catch (Exception e) {
+            Log.d(TAG, "Exception " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private void uploadData(List<RoomData> roomData) {
+        NotificationManager notificationManager = (NotificationManager) getContext().getSystemService(Context.NOTIFICATION_SERVICE);
+        createNotificationChannel();
+
+        NotificationCompat.Builder builder = new NotificationCompat
+                .Builder(getContext(), "CHANNEL_ID")
+                .setSmallIcon(R.drawable.ic_baseline_notifications)
+                .setContentTitle("Upload..")
+                .setAllowSystemGeneratedContextualActions(false)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT);
+
+        for (int i = 0; i < roomData.size(); i++) {
+            RoomData data = roomData.get(i);
+            Post post = new Post(data.getID(), data.getText());
+            builder.setProgress(roomData.size(), i, false);
+            notificationManager.notify(2, builder.build());
+
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            int finalI = i;
+
+            compositeDisposable.add(serviceInterface.postData(post)
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(Schedulers.io())
+                    .subscribe(postResponse -> {
+                        database.roomDao().delete(roomData.get(finalI));
+                    }, throwable -> {
+                        throwable.getMessage();
+                    }));
+
+            /*RetrofitClient.getApiServices()
+                    .postData(post)
+                    .enqueue(new Callback<PostResponse>() {
+                        @Override
+                        public void onResponse(@NonNull Call<PostResponse> call,
+                                               @NonNull Response<PostResponse> response) {
+                            if (response.isSuccessful()) {
+                                Log.d(logDebug, "call -: RetrofitClient onResponse ...");
+                                studentDB.studentDao().deleteStudent(students.get(finalI));
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(@NonNull Call<PostResponse> call, @NonNull Throwable t) {
+                            Log.d(logDebug, "call -: RetrofitClient onFailure ...");
+                        }
+                    });*/
+        }
+
+        builder.setProgress(0, 0, false);
+        builder.clearActions();
+        builder.setAutoCancel(false);
+        builder.setContentIntent(null);
+        notificationManager.notify(2, builder.build());
+    }
+
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            CharSequence name = "Notification Channel";
+            String description = "this is for Test Notification";
+            int importance = NotificationManager.IMPORTANCE_HIGH;
+            NotificationChannel channel = new NotificationChannel("CHANNEL_ID", name, importance);
+            channel.setDescription(description);
+            NotificationManager notificationManager = getContext().getSystemService(NotificationManager.class);
+            notificationManager.createNotificationChannel(channel);
+        }
     }
 
     private void fetchData() {
@@ -92,33 +161,5 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                     throwable.getMessage();
                 }));
     }
-
-
-
-    /*private void showNotification(Context context, String title, String message) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            // Create the NotificationChannel, but only on API 26+ because
-            // the NotificationChannel class is new and not in the support library
-            CharSequence name = "RandomName";
-            String description = "RandomDescription";
-            int importance = NotificationManager.IMPORTANCE_HIGH;
-            NotificationChannel channel = new NotificationChannel("ID1", name, importance);
-            channel.setDescription(description);
-            // Add the channel
-            NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-            if (notificationManager != null) {
-                notificationManager.createNotificationChannel(channel);
-            }
-        }
-        // Create the notification
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, "ID1")
-                //used notification icon for testing purpose
-                .setSmallIcon(R.mipmap.ic_launcher).setContentTitle(title).setStyle(new NotificationCompat.BigTextStyle().bigText(message)).setPriority(NotificationCompat.PRIORITY_DEFAULT).setVibrate(new long[0]);
-
-
-        // Show the notification
-        NotificationManagerCompat.from(context).notify(1, builder.build());
-        Log.e("WorkManager", "Notification shown");
-    }*/
 }
 

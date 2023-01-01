@@ -1,5 +1,7 @@
 package com.example.backgroundsync.network;
 
+import static com.example.backgroundsync.utils.ConstantField.BASEURL;
+
 import android.content.Context;
 
 import java.util.concurrent.TimeUnit;
@@ -25,7 +27,7 @@ public class RetrofitClient {
 
         if (retrofit == null) {
             retrofit = new Retrofit.Builder()
-                    .baseUrl("https://jsonplaceholder.typicode.com/")  //BuildConfig.BASE_URL first page https://jsonplaceholder.typicode.com/
+                    .baseUrl(BASEURL)  //BuildConfig.BASE_URL first page https://jsonplaceholder.typicode.com/
                     .client(okHttpClient)
                     .addCallAdapterFactory(RxJava2CallAdapterFactory.create()) // without call, supporting the service method
                     .addConverterFactory(GsonConverterFactory.create())
