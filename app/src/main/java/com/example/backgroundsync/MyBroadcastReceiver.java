@@ -12,7 +12,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
 
-public class MyBroadcastReceiver extends BroadcastReceiver {
+/*public class MyBroadcastReceiver extends BroadcastReceiver {
     MediaPlayer mp;
     Account account;
     public static final String AUTHORITY = "com.example.backgroundsync.provider";
@@ -52,4 +52,4 @@ public class MyBroadcastReceiver extends BroadcastReceiver {
         bundle.putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true);
         ContentResolver.requestSync(account, AUTHORITY, bundle);
     }
-}
+}*/

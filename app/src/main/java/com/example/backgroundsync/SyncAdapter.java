@@ -42,7 +42,7 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.schedulers.Schedulers;
 
-public class SyncAdapter extends AbstractThreadedSyncAdapter {
+/*public class SyncAdapter extends AbstractThreadedSyncAdapter {
     ContentResolver contentResolver;
     ServiceInterface serviceInterface;
     CompositeDisposable compositeDisposable = new CompositeDisposable();
@@ -112,24 +112,6 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                     }, throwable -> {
                         throwable.getMessage();
                     }));
-
-            /*RetrofitClient.getApiServices()
-                    .postData(post)
-                    .enqueue(new Callback<PostResponse>() {
-                        @Override
-                        public void onResponse(@NonNull Call<PostResponse> call,
-                                               @NonNull Response<PostResponse> response) {
-                            if (response.isSuccessful()) {
-                                Log.d(logDebug, "call -: RetrofitClient onResponse ...");
-                                studentDB.studentDao().deleteStudent(students.get(finalI));
-                            }
-                        }
-
-                        @Override
-                        public void onFailure(@NonNull Call<PostResponse> call, @NonNull Throwable t) {
-                            Log.d(logDebug, "call -: RetrofitClient onFailure ...");
-                        }
-                    });*/
         }
 
         builder.setProgress(0, 0, false);
@@ -161,5 +143,5 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                     throwable.getMessage();
                 }));
     }
-}
+}*/
 

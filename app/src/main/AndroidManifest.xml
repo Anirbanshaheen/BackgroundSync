@@ -32,7 +32,7 @@
                 android:value="" />
         </activity>
 
-        <service
+        <!--<service
             android:name=".AuthenticatorService"
             android:exported="false">
             <intent-filter>
@@ -41,9 +41,9 @@
             <meta-data
                 android:name="android.accounts.AccountAuthenticator"
                 android:resource="@xml/authenticator" />
-        </service>
+        </service>-->
 
-        <service
+        <!--<service
             android:name=".SyncService"
             android:exported="true"
             android:process=":sync">
@@ -52,7 +52,7 @@
             </intent-filter>
             <meta-data android:name="android.content.SyncAdapter"
                 android:resource="@xml/syncadapter" />
-        </service>
+        </service>-->
 
         <provider
             android:name=".StubProvider"
@@ -61,7 +61,7 @@
             android:label="account"
             android:syncable="true"/>
 
-        <receiver android:name=".MyBroadcastReceiver"/>
+        <!--<receiver android:name=".MyBroadcastReceiver"/>-->
 
     </application>
 

@@ -16,8 +16,6 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class RetrofitClient {
 
     private static Retrofit retrofit = null;
-    private static Retrofit retrofitFromActivity = null;
-    private static Retrofit retrofitPassengerFromActivity = null;
     private static final long TIMEOUT = 120L;
     private static OkHttpClient okHttpClient;
 

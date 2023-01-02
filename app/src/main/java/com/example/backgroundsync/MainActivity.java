@@ -2,6 +2,8 @@ package com.example.backgroundsync;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.work.PeriodicWorkRequest;
+import androidx.work.WorkManager;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
@@ -20,21 +22,26 @@ import android.view.View;
 import android.widget.Toast;
 
 import com.example.backgroundsync.databinding.ActivityMainBinding;
+import com.example.backgroundsync.network.RetrofitClient;
+import com.example.backgroundsync.network.ServiceInterface;
 import com.example.backgroundsync.room.RoomDB;
 import com.example.backgroundsync.room.RoomData;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends AppCompatActivity {
 
     public static final String AUTHORITY = "com.example.backgroundsync.provider";
     public static final String ACCOUNT_TYPE = "com.example.backgroundsync";
     public static final String ACCOUNT = "placeholderaccount";
+    public static final String TAG = "MainActivity";
 
     Account mAccount;
     ContentResolver mResolver;
-    SyncAdapter syncAdapter;
+    ServiceInterface serviceInterface;
+    //SyncAdapter syncAdapter;
 
     List<RoomData> dataList = new ArrayList();
     LinearLayoutManager linearLayoutManager;
@@ -51,7 +58,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(binding.getRoot());
 
         //mAccount = CreateSyncAccount(this);
-        mResolver = getContentResolver();
+        //mResolver = getContentResolver();
 
         database = RoomDB.getInstance(this);
         dataList = database.roomDao().getAll();
@@ -63,22 +70,26 @@ public class MainActivity extends AppCompatActivity {
         binding.recyclerView.setAdapter(adapter);
 
         clickEvent();
-        alarmManager();
-
-        /*SyncAdapterManager syncAdapterManager = new SyncAdapterManager(this);
-        syncAdapterManager.beginPeriodicSync();*/
+        //alarmManager();
+        workManger();
 
     }
 
+    private void workManger() {
+        PeriodicWorkRequest periodicWorkRequest = new PeriodicWorkRequest.Builder(OperationWorker.class, 15, TimeUnit.MINUTES).build();
+        WorkManager.getInstance().enqueue(periodicWorkRequest);
+        Log.d(TAG, "main activity");
+    }
+
     @SuppressLint("ShortAlarm")
-    private void alarmManager() {
+    /*private void alarmManager() {
         Intent intent = new Intent(this, MyBroadcastReceiver.class);
         PendingIntent pendingIntent = PendingIntent.getBroadcast(this.getApplicationContext(), 234324243, intent, 0);
         AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
         alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), 30000L, pendingIntent);
         //alarmManager.set(Math.toIntExact(AlarmManager.INTERVAL_HALF_HOUR), System.currentTimeMillis(), pendingIntent);
         Toast.makeText(this, "Alarm set",Toast.LENGTH_LONG).show();
-    }
+    }*/
 
     private void clickEvent() {
         binding.addBtn.setOnClickListener(view -> {
